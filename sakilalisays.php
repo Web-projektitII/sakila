@@ -30,7 +30,6 @@ while (list($category_id,$name) = $result->fetch_row()){
 
 function kielet(){
 $yhteys = db_connect();
-echo "<select required class=\"form-control\" name=\"language_id\">\n";
 echo "<option value=''></option>\n";
 $query = "SELECT language_id,name FROM language ORDER BY name";
 $result = $yhteys->query($query);
@@ -42,12 +41,13 @@ if ($result !== false){
      echo "<option value=\"$id\"$selected>$name</option>\n";
      }
    }  
-   echo "</select>";	
  }
 
 
 function rating(){
    /* 'G','PG','PG-13','R','NC-17' */
+   /* Huom. validointivirhe ei tulostu ilman lopun 
+      ylimääräistä piilotettua radio button-elementtiä. */
    $yhteys = $GLOBALS['yhteys'];
    $str = "";
    $strArr = [];
@@ -59,18 +59,20 @@ function rating(){
      preg_match('/enum\((.*)\)$/',$str,$matches);
      $strArr = explode(",",$matches[1]);
      }
-   echo "<ul class=\"list-group list-group-horizontal\">";
+   //echo "<ul class=\"list-group list-group-horizontal\">";
    foreach ($strArr AS $rating){
      $r = trim($rating,"'");
      $rating_set = (isset($_POST['rating']) and $r == $_POST['rating']);  
      $checked = ($rating_set) ? "checked" : "";
-     echo "<li class=\"list-group-item nowrap\">
+     echo "<div class=\"form-check form-check-inline\">
      <input class=\"form-check-input\" type=\"radio\" name=\"rating\" value=$rating $checked required>
-     <label class=\"form-check-label\">$r</label></li>";
+     <label class=\"form-check-label\">$r</label>
+     </div>";
      }	
-   echo "</ul>"; 
+   //echo "</ul>"; 
    }
    
+
 function specialfeatures(){
    /* 'Trailers','Commentaries','Deleted Scenes','Behind the Scenes' */
    $yhteys = $GLOBALS['yhteys'];
@@ -87,7 +89,7 @@ function specialfeatures(){
       $box_set = isset($_POST['special_features']);
       $feature_set = ($box_set and in_array($f,$_POST['special_features']));  
       $checked = ($feature_set) ? "checked" : "";
-      echo "<div class=\"checkbox\">
+      echo "<div class=\"form-check\">
          <label class=\"form-check-label\">
          <input class=\"form-check-input\" type=\"checkbox\" name=\"special_features[]\" 
          value=$feature $checked>$f</label></div>";
@@ -117,17 +119,15 @@ if (isset($_POST['painike'])){
       if (!$$kentta && in_array($kentta,$pakolliset)) $virheet[$kentta] = true;
       }
   
-   $str_kentat = implode(",",$kentat);
+   $str_kentat = implode(", ",$kentat);
    //echo "str_kentat:$str_kentat<br>";
-   if ($virheet) echo "Virheet:<br>";
-   foreach ($virheet as $kentta => $arvo) echo "$kentta:$arvo<br>";
-
+   
    if (!$virheet) {
       $query = "INSERT INTO film ($str_kentat) VALUES ('$title','$description','$release_year',$language_id,$rental_duration,$rental_rate,'$length','$rating','$special_features')";
       //echo "$query<br>";
+      //exit;
       $result = $yhteys->query($query);
       $lisattiin = $yhteys->affected_rows;
-      echo "lisattiin: $lisattiin<br>";   
    }
     
   }
@@ -140,94 +140,91 @@ td {vertical-align:top;}
 <form method="post" novalidate class="needs-validation">
 <fieldset>
 <legend>Video lisääminen</legend>   
-<div class="row">
-<label class="form-label col-sm-3">Nimi</label>
+
+<div class="row mb-sm-1">
+<label class="form-label mb-0 col-sm-3">Nimi</label>
 <div class="col-sm-9">
-<input id="title" name="title" class="form-control" placeholder="Nimi" value="<?php nayta('title');?>" autofocus required></input>
+<input id="title" name="title" class="form-control <?php is_invalid('title');?>" placeholder="Nimi" value="<?php nayta('title');?>" autofocus required></input>
 <div class="invalid-feedback">Nimi puuttuu.</div>
 </div></div>
 
-<div class="row">
-<label class="form-label col-sm-3">Kuvaus</label>
+<div class="row mb-sm-1">
+<label class="form-label mb-0 col-sm-3">Kuvaus</label>
 <div class="col-sm-9">
 <!--<textarea onkeyup="poista_is_invalid(this)" id="description" name="description" class="<?php is_invalid('description');?>" placeholder="Kuvaus"><?php nayta('description');?></textarea>-->
-<textarea id="description" name="description" class="<?php is_invalid('description');?>" placeholder="Kuvaus"><?php nayta('description');?></textarea>
-<div class="invalid-feedback">Kuvaus puuttuu.</div>
+<textarea id="description" name="description" class="form-control <?php is_invalid('description');?>" placeholder="Kuvaus"><?php nayta('description');?></textarea>
+<span class="invalid-feedback">Kuvaus puuttuu.</span>
 </div></div>
 
-<div class="row">
-<label class="form-label col-sm-3">Julkaisuvuosi</label>
+<div class="row mb-sm-1">
+<label class="form-label mb-0 col-sm-3">Julkaisuvuosi</label>
 <div class="col-sm-9">
-<input required min="1900" max="2100" type="number" name="release_year" placeholder="2019" value="<?php nayta('release_year');?>">
+<input required min="1901" max="2100" type="number" id="release_year" name="release_year" class="form-control w-auto <?php is_invalid('release_year');?>" placeholder="2019" value="<?php nayta('release_year');?>">
 <div class="invalid-feedback">Julkaisuvuosi puuttuu.</div>
 </div></div>
 
-<div class="row">
-<label class="form-label col-sm-3">Kieli</label>
+<div class="row mb-sm-1">
+<label class="form-label mb-0 col-sm-3">Kieli</label>
 <div class="col-sm-9">
+<select required id="language_id" name="language_id" class="form-select w-auto <?php is_invalid('language_id');?>" >\n
 <?php echo kielet();?>
+</select>
 <div class="invalid-feedback">Valitse kieli.</div>
 </div></div>
 
-<div class="row">
-<label class="form-label col-sm-3">Vuokra-aika</label>
+<div class="row mb-sm-1">
+<label class="form-label mb-0 col-sm-3">Vuokra-aika</label>
 <div class="col-sm-9">
-<input required min="1" max="7" type="number" name="rental_duration" placeholder="7" value="<?php nayta('rental_duration');?>">
+<input required min="1" max="7" type="number" id="rental_duration" name="rental_duration" class="form-control w-auto <?php is_invalid('rental_duration');?>" placeholder="7" value="<?php nayta('rental_duration');?>">
 <div class="invalid-feedback">Vuokra-aika puuttuu.</div>
 </div></div>
 
-<div class="row">
-<label class="form-label col-sm-3">Vuokrahinta</label>
+<div class="row mb-sm-1">
+<label class="form-label mb-0 col-sm-3">Vuokrahinta</label>
 <div class="col-sm-9">
-<input required min="1.00" max="100.00" type="number" step="0.10" name="rental_rate" placeholder="5,00" value="<?php nayta('rental_rate');?>">
+<input required min="1.00" max="100.00" type="number" step="0.10" id="rental_rate" name="rental_rate" class="form-control w-auto <?php is_invalid('rental_rate');?>" placeholder="5,00" value="<?php nayta('rental_rate');?>">
 <div class="invalid-feedback">Vuokrahinta puuttuu.</div>
 </div></div>
 
-<div class="row">
-<label class="form-label col-sm-3">Ikäraja</label>
-<div class="col-sm-9"><?php rating();?>
+<div class="row mb-sm-1">
+<label class="form-label mb-0 col-sm-3">Ikäraja</label>
+<div class="col-sm-9">
+<?php rating();?>
+<input class="d-none" type="radio" name="rating">
 <div class="invalid-feedback">Valitse ikäraja.</div>
 </div></div>
 
-<div class="row">
-<label class="form-label col-sm-3">Special features</label>
-<div class="col-sm-9"><?php specialfeatures();?></div>
-</div>
+<div class="row mb-sm-1">
+<label class="form-label mb-0 col-sm-3">Special features</label>
+<div class="col-sm-9">
+<?php specialfeatures();?>
+</div></div>
 
-<input type="submit" name="painike" value="Lisää">  
+<input type="submit" name="painike" class="btn btn-primary" value="Lisää">  
 </fieldset>
 </form>
-</div>
+
 <?php
 
-if (isset($_GET['painike'])){
-echo "<p>";
-echo "Lomake on vastaanotettu.";
-echo "</p>";
-}
+if (isset($_POST['painike'])){
+  echo '<div class="mt-3">';
+  echo '<div class="alert alert-info" role="alert">';
+  echo "Lomake on vastaanotettu.</div>";
+  if ($virheet) {
+    echo "<div class=\"alert alert-danger\" role=\"alert\">";
+    echo "Virheet:<br>";
+    foreach ($virheet as $kentta => $arvo) echo "$kentta<br>";
+    echo "</div>";
+    }
+  else {
+    echo "<div class=\"alert alert-success\" role=\"alert\">";
+    echo "Lisättiin: $lisattiin video<br></div>";   
+    echo "<div class=\"alert alert-info\" role=\"alert\">";
+    echo $query;
+    echo "</div>";
+  }
+  echo "</div></div>";
+  }
 include('footer.html')
-
-/*
-<script>
-(() => {
-        'use strict'
-        // Fetch all the forms we want to apply custom Bootstrap validation styles to
-        const forms = document.querySelectorAll('.needs-validation')
-        // Loop over them and prevent submission
-        Array.from(forms).forEach(form => {
-          form.addEventListener('submit', event => {
-            if (!form.checkValidity()) {
-              event.preventDefault()
-              event.stopPropagation()
-            }
-            form.classList.add('was-validated')
-          }, false)
-        })
-      })()    
-</script>     
-*/
 ?>
-
- 
-
 </html>

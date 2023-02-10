@@ -10,8 +10,9 @@
       margin:0;
       }
       
-  .container {
+  body > .container {
       flex: 1;
+      max-width: 100%;
       /*Tyhjäksi jätettävän tilan osuus  
       flex-grow: 1;
       Elementtien sopeutus käytettävissä olevaan tilaan 
@@ -34,6 +35,15 @@
   fieldset, legend {
       all: revert;
    }
+
+   ::placeholder { /* Chrome, Firefox, Opera, Safari 10.1+ */
+    color: #aaa!important;
+    opacity: 1; /* Firefox */
+  }
+  
+  ::-ms-input-placeholder { /* Microsoft Edge */
+    color: #aaa;
+  }
 
   @media (min-width: 576px) {
   }
