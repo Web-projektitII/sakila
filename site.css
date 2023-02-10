@@ -29,6 +29,12 @@
     background-color:yellowgreen;
     }
   
+  .nowrap {white-space:nowrap;}  
+
+  fieldset, legend {
+      all: revert;
+   }
+
   @media (min-width: 576px) {
   }
   

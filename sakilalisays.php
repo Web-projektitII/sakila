@@ -11,6 +11,12 @@ function nayta($kentta){
 echo isset($_POST[$kentta]) ? $_POST[$kentta] : ""; 
 return;
 }
+
+function is_invalid($kentta){
+  $virheet = $GLOBALS['virheet'];
+  echo isset($virheet[$kentta]) ? "is-invalid" : ""; 
+  return;
+  }
    
 function genre(){
 $yhteys = db_connect();   
@@ -24,8 +30,8 @@ while (list($category_id,$name) = $result->fetch_row()){
 
 function kielet(){
 $yhteys = db_connect();
-echo "<select required class=\"form-control\" name=\"language_id\">";
-echo "<option value=''></option><br>";
+echo "<select required class=\"form-control\" name=\"language_id\">\n";
+echo "<option value=''></option>\n";
 $query = "SELECT language_id,name FROM language ORDER BY name";
 $result = $yhteys->query($query);
 if ($result !== false){
@@ -45,7 +51,6 @@ function rating(){
    $yhteys = $GLOBALS['yhteys'];
    $str = "";
    $strArr = [];
-   $errormsg = "<div class=\"invalid-feedback\" style=\"margin-top:-0.25rem;\">Valitse ikäraja.</div>";
    $query = "SHOW COLUMNS FROM film LIKE 'rating'";
    $result = $yhteys->query($query);
    if ($result !== false){
@@ -59,13 +64,11 @@ function rating(){
      $r = trim($rating,"'");
      $rating_set = (isset($_POST['rating']) and $r == $_POST['rating']);  
      $checked = ($rating_set) ? "checked" : "";
-     echo "<li class=\"list-group-item\">
+     echo "<li class=\"list-group-item nowrap\">
      <input class=\"form-check-input\" type=\"radio\" name=\"rating\" value=$rating $checked required>
      <label class=\"form-check-label\">$r</label></li>";
      }	
    echo "</ul>"; 
-   echo "<input style=\"display:none;\" type=\"radio\" name=\"rating\" value='' required>";
-   echo $errormsg;   
    }
    
 function specialfeatures(){
@@ -96,33 +99,32 @@ if (isset($_POST['painike'])){
 /* nimi, kuvaus, julkaisuvuosi, kieli, vuokra-aika, vuokrahinta, pituus, korvaushinta, ikäraja, special features */
 /* title, description, release_year, language_id, rental_duration, rental_rate, length, rating, special_features */ 
    $kentat = ['title','description','release_year','language_id','rental_duration','rental_rate','length','rating','special_features'];
-   $pakolliset = ['title','language_id','rental_duration','rental_rate','rating'];
+   $pakolliset = ['title','description','language_id','rental_duration','rental_rate','rating'];
    $virheet = [];
    foreach ($kentat as $kentta) {
       $$kentta = $_POST[$kentta] ?? '';
       if (!is_array($$kentta)){
-         echo "$kentta:".$$kentta."<br>";
+         //echo "$kentta:".$$kentta."<br>";
          $yhteys->real_escape_string(strip_tags(trim($$kentta)));
          }
       else {
-         echo "$kentta: ".implode(",",$$kentta);
-         $$kentta = implode(",",$$kentta);
+         //echo "$kentta: ".implode(",",$$kentta);
          foreach ($$kentta as $value) {
             $yhteys->real_escape_string(strip_tags(trim($value)));
            }
+         $$kentta = implode(",",$$kentta);  
         }
       if (!$$kentta && in_array($kentta,$pakolliset)) $virheet[$kentta] = true;
-
       }
   
    $str_kentat = implode(",",$kentat);
-   echo "str_kentat:$str_kentat<br>";
+   //echo "str_kentat:$str_kentat<br>";
    if ($virheet) echo "Virheet:<br>";
    foreach ($virheet as $kentta => $arvo) echo "$kentta:$arvo<br>";
 
    if (!$virheet) {
       $query = "INSERT INTO film ($str_kentat) VALUES ('$title','$description','$release_year',$language_id,$rental_duration,$rental_rate,'$length','$rating','$special_features')";
-      echo "$query<br>";
+      //echo "$query<br>";
       $result = $yhteys->query($query);
       $lisattiin = $yhteys->affected_rows;
       echo "lisattiin: $lisattiin<br>";   
@@ -135,56 +137,65 @@ th {text-align:left;}
 td {vertical-align:top;}    
 </style>    
 <div class="container">
-<h1>LISÄYS</h1> 
 <form method="post" novalidate class="needs-validation">
-
+<fieldset>
+<legend>Video lisääminen</legend>   
 <div class="row">
-<label class="form-label col-sm-2">Nimi</label>
-<div class="col-sm-10">
-<input id="title" name="title" class="form-control" placeholder="Nimi" autofocus required></input>
+<label class="form-label col-sm-3">Nimi</label>
+<div class="col-sm-9">
+<input id="title" name="title" class="form-control" placeholder="Nimi" value="<?php nayta('title');?>" autofocus required></input>
 <div class="invalid-feedback">Nimi puuttuu.</div>
 </div></div>
 
 <div class="row">
-<label class="form-label col-sm-2">Kuvaus</label>
-<div class="col-sm-10">
-<textarea id="description" name="description" placeholder="Kuvaus"></textarea>
+<label class="form-label col-sm-3">Kuvaus</label>
+<div class="col-sm-9">
+<!--<textarea onkeyup="poista_is_invalid(this)" id="description" name="description" class="<?php is_invalid('description');?>" placeholder="Kuvaus"><?php nayta('description');?></textarea>-->
+<textarea id="description" name="description" class="<?php is_invalid('description');?>" placeholder="Kuvaus"><?php nayta('description');?></textarea>
+<div class="invalid-feedback">Kuvaus puuttuu.</div>
 </div></div>
 
 <div class="row">
-<label class="form-label col-sm-2">Julkaisuvuosi</label>
-<div class="col-sm-10">
+<label class="form-label col-sm-3">Julkaisuvuosi</label>
+<div class="col-sm-9">
 <input required min="1900" max="2100" type="number" name="release_year" placeholder="2019" value="<?php nayta('release_year');?>">
+<div class="invalid-feedback">Julkaisuvuosi puuttuu.</div>
 </div></div>
 
 <div class="row">
-<label class="form-label col-sm-2">Kieli</label>
-<div class="col-sm-10"><?php echo kielet();?></div>
-</div>
+<label class="form-label col-sm-3">Kieli</label>
+<div class="col-sm-9">
+<?php echo kielet();?>
+<div class="invalid-feedback">Valitse kieli.</div>
+</div></div>
 
 <div class="row">
-<label class="form-label col-sm-2">Vuokra-aika</label>
-<div class="col-sm-10">
+<label class="form-label col-sm-3">Vuokra-aika</label>
+<div class="col-sm-9">
 <input required min="1" max="7" type="number" name="rental_duration" placeholder="7" value="<?php nayta('rental_duration');?>">
+<div class="invalid-feedback">Vuokra-aika puuttuu.</div>
 </div></div>
 
 <div class="row">
-<label class="form-label col-sm-2">Vuokrahinta</label>
-<div class="col-sm-10">
+<label class="form-label col-sm-3">Vuokrahinta</label>
+<div class="col-sm-9">
 <input required min="1.00" max="100.00" type="number" step="0.10" name="rental_rate" placeholder="5,00" value="<?php nayta('rental_rate');?>">
+<div class="invalid-feedback">Vuokrahinta puuttuu.</div>
 </div></div>
 
 <div class="row">
-<label class="form-label col-sm-2">Ikäraja</label>
-<div class="col-sm-10"><?php rating();?></div>
-</div>
+<label class="form-label col-sm-3">Ikäraja</label>
+<div class="col-sm-9"><?php rating();?>
+<div class="invalid-feedback">Valitse ikäraja.</div>
+</div></div>
 
 <div class="row">
-<label class="form-label col-sm-2">Special features</label>
-<div class="col-sm-10"><?php specialfeatures();?></div>
+<label class="form-label col-sm-3">Special features</label>
+<div class="col-sm-9"><?php specialfeatures();?></div>
 </div>
 
 <input type="submit" name="painike" value="Lisää">  
+</fieldset>
 </form>
 </div>
 <?php
