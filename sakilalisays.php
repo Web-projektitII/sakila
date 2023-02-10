@@ -4,17 +4,17 @@
 <?php
 $tietokanta = "sakila";
 $result = false;
+$virheet = [];
 include('tietokantarutiinit.php');
 include('header.php');
 
 function nayta($kentta){
-echo isset($_POST[$kentta]) ? $_POST[$kentta] : ""; 
+echo (!isset($GLOBALS['virheet'][$kentta]) and isset($_POST[$kentta])) ? $_POST[$kentta] : ""; 
 return;
 }
 
 function is_invalid($kentta){
-  $virheet = $GLOBALS['virheet'];
-  echo isset($virheet[$kentta]) ? "is-invalid" : ""; 
+  echo isset($GLOBALS['virheet'][$kentta]) ? "is-invalid" : ""; 
   return;
   }
    
@@ -102,18 +102,16 @@ if (isset($_POST['painike'])){
 /* title, description, release_year, language_id, rental_duration, rental_rate, length, rating, special_features */ 
    $kentat = ['title','description','release_year','language_id','rental_duration','rental_rate','length','rating','special_features'];
    $pakolliset = ['title','description','language_id','rental_duration','rental_rate','rating'];
-   $virheet = [];
+
    foreach ($kentat as $kentta) {
       $$kentta = $_POST[$kentta] ?? '';
       if (!is_array($$kentta)){
-         //echo "$kentta:".$$kentta."<br>";
-         $yhteys->real_escape_string(strip_tags(trim($$kentta)));
+         $$kentta = $yhteys->real_escape_string(strip_tags(trim($$kentta)));
          }
       else {
-         //echo "$kentta: ".implode(",",$$kentta);
-         foreach ($$kentta as $value) {
-            $yhteys->real_escape_string(strip_tags(trim($value)));
-           }
+         foreach ($$kentta as $key => $value) {
+            $$kentta[$key] = $yhteys->real_escape_string(strip_tags(trim($value)));
+            }
          $$kentta = implode(",",$$kentta);  
         }
       if (!$$kentta && in_array($kentta,$pakolliset)) $virheet[$kentta] = true;
